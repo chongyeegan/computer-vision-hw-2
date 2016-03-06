@@ -3,9 +3,9 @@ from skimage import io, segmentation
 
 
 # boundary recall
-def RecallThickened(img, GT):
-    # img = io.imread(edge_path, as_grey=True)
-    # GT = io.imread(GT_path, as_grey=True).astype(int)
+def RecallThickened(edge_path, GT_path):
+    img = io.imread(edge_path).astype(int)
+    GT = io.imread(GT_path).astype(int) / 255
 
     # thickening GT
     GT_thickened = np.lib.pad(GT, ((3, 3)), 'constant').astype(int)
@@ -37,13 +37,15 @@ def RecallThickened(img, GT):
 
     if totalImg == 0:
         totalImg = 1
-    return float(score)/totalGT
+
+    # print score, totalGT, totalImg
+    return float(score) / totalGT
 
 
 # Under-Segmentation
-def UnderSegmentation(img, GT):
-    # img = io.imread(seg_path, as_grey=True)
-    # GT = io.imread(GT_path, as_grey=True).astype(int)
+def UnderSegmentation(seg_path, GT_path):
+    img = io.imread(seg_path).astype(int)
+    GT = io.imread(GT_path).astype(int)
 
     N = GT.shape[0] * GT.shape[1]
 

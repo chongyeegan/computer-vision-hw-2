@@ -1,12 +1,14 @@
 from skimage import util
 import numpy as np
 import sys
+import math
 
 
 def get_k_centers(k, height, width):
     grid_y, grid_x = np.mgrid[:height, :width]
     slices = util.regular_grid((height, width), k)
     step_y, step_x = [s.step if s.step is not None else 1 for s in slices]
+
     centers_y = grid_y[slices]
     centers_x = grid_x[slices]
 
@@ -17,6 +19,7 @@ def get_k_centers(k, height, width):
 
 
 def get_window_bounds(center, step_y, step_x, height, width):
+    # print center, step_y, step_x, height, width
     y_min = int(max(center[0] - step_y, 0))
     y_max = int(min(center[0] + step_y + 1, height))
     x_min = int(max(center[1] - step_x, 0))
@@ -36,15 +39,22 @@ def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_y
     centers_yx, step_y, step_x = get_k_centers(k, height, width)
 
     n_centers = centers_yx.shape[0]
+    # print centers_yx
     print 'centers', n_centers
-#     print centers_yx, step_y, step_x
+
+    # TODO: confirm this change
+    S_ = math.sqrt(float(height*width)/n_centers)
+    step_y = int(S_)
+    step_x = int(S_)
+
     step = max(step_y, step_x)
+    print 'step size', step
 
     distance_start = np.empty((height, width), dtype=np.double)
     distance_end = np.empty((height, width), dtype=np.double)
     nearest_centers = np.empty((height, width), dtype=np.intp)
     distance = np.empty((height, width), dtype=np.double)
-    n_segment_elems = np.zeros(n_centers, dtype=np.intp)
+    n_center_elems = np.zeros(n_centers, dtype=np.intp)
 
     c_feat_all = generate_features_vec(centers_yx, generate_feature, image)
 
@@ -52,6 +62,7 @@ def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_y
         change = False
         distance[:, :] = sys.float_info.max
         for k in xrange(n_centers):
+            # print c_feat_all
             c_feat = c_feat_all[k]
             c = get_yx(c_feat)
             y_min, y_max, x_min, x_max = get_window_bounds(c, step_y, step_x, height, width)
@@ -73,16 +84,16 @@ def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_y
         if change is False:
             break
 
-        n_segment_elems[:] = 0
+        # TODO: maybe refactor this part
+        n_center_elems[:] = 0
         c_feat_all[:, :] = 0
         for y in xrange(height):
             for x in xrange(width):
-                k = nearest_centers[y, x]
-                n_segment_elems[k] += 1
+                n_center_elems[nearest_centers[y, x]] += 1
                 yx_feat = generate_feature((y, x), image)
-                c_feat_all[k] += yx_feat
+                c_feat_all[nearest_centers[y, x]] += yx_feat
 
         for k in xrange(n_centers):
-            c_feat_all[k] /= n_segment_elems[k]
+            c_feat_all[k] /= n_center_elems[k]
 
     return nearest_centers, distance_start, distance_end
