@@ -1,4 +1,4 @@
-from skimage import util
+from skimage import util, color
 import numpy as np
 import sys
 import math
@@ -78,7 +78,7 @@ def generate_features_vec(points, generate_feature, image):
     return np.asarray(feature_vec)
 
 
-def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_yx, distance_start=None, distance_end=None, nearest_centers=None):
+def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_yx, distance_start=None, distance_end=None, nearest_centers=None, lab=False):
     '''
     Implementation of the SLIC algorithm. This provides 2 interfaces to running. If the user provides output data structures, those data structures will be used and modified.
 
@@ -98,6 +98,9 @@ def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_y
     distance_start - np array of size (height, width) where each element is the initial distance calculated from the initial initialization of centers
     distance_end - np array of size (height, width) where each element is the ending distance calculated from the final iteration of centers
     '''
+    image_color = np.copy(image)
+    if lab is True:
+        image_color = color.rgb2lab(image_color)
     height, width = image.shape[:2]
 
     # get initial center assignments
@@ -128,7 +131,7 @@ def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_y
     n_center_elems = np.zeros(n_centers, dtype=np.intp)
 
     # generate features for all initial centers - this structure is used to track distances throughout execution
-    c_feat_all = generate_features_vec(centers_yx, generate_feature, image)
+    c_feat_all = generate_features_vec(centers_yx, generate_feature, image_color)
 
     for i in xrange(max_iter):
         change = False
@@ -140,7 +143,7 @@ def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_y
             y_min, y_max, x_min, x_max = get_window_bounds(c, step_y, step_x, height, width)
             for y in xrange(y_min, y_max):
                 for x in xrange(x_min, x_max):
-                    yx_feat = generate_feature((y, x), image)
+                    yx_feat = generate_feature((y, x), image_color)
                     dist = calculate_distance(yx_feat, c_feat, weight, step)
                     # this performs comparison of distance for each center
                     if dist < distance[y, x]:
@@ -165,7 +168,7 @@ def slic(image, k, max_iter, weight, generate_feature, calculate_distance, get_y
         for y in xrange(height):
             for x in xrange(width):
                 n_center_elems[nearest_centers[y, x]] += 1
-                yx_feat = generate_feature((y, x), image)
+                yx_feat = generate_feature((y, x), image_color)
                 c_feat_all[nearest_centers[y, x]] += yx_feat
 
         for k in xrange(n_centers):
