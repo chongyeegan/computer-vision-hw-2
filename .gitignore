@@ -3,9 +3,11 @@ Images/
 untitled folder/
 */*.jpg
 */*.png
+*/*/*.png
 *.pdf
 *.sublime-project
 *.tif
+
 
 
 # Byte-compiled / optimized / DLL files

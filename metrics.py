@@ -18,7 +18,7 @@ def RecallThickened(edge_path, GT_path):
     Boundary Recall value
     '''
     img = io.imread(edge_path).astype(int)
-    GT = io.imread(GT_path).astype(int) / 255
+    GT = io.imread(GT_path).astype(int) / 255.
 
     # thickening GT
     GT_thickened = np.lib.pad(GT, ((3, 3)), 'constant').astype(int)
